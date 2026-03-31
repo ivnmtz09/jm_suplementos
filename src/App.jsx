@@ -1,92 +1,71 @@
 // src/App.jsx
-import React, { useState } from "react";
-import Navbar from "./components/Navbar";
-import HeroSection from "./components/HeroSection";
-import ProductCatalog from "./components/ProductCatalog";
-import CartDrawer from "./components/CartDrawer";
-import Footer from "./components/Footer";
-import useCartStore, { selectItemCount } from "./store/cartStore";
-import { MessageCircle, MapPin, Clock } from "lucide-react";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
-/** Sección de Contacto — con WhatsApp directo */
-const ContactSection = () => {
-  const phone = import.meta.env.VITE_WHATSAPP_NUMBER ?? "";
-  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent("¡Hola! Quiero más información sobre sus productos 💪")}`;
-
-  return (
-    <section id="contacto" className="py-20 px-6">
-      <div className="max-w-2xl mx-auto text-center">
-        <p className="text-[#0066FF] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-          Contáctanos
-        </p>
-        <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-4">
-          ¿Tienes <span className="text-[#0066FF]">dudas?</span>
-        </h2>
-        <p className="text-gray-400 mb-10 leading-relaxed">
-          Nuestro equipo está listo para asesorarte sobre el suplemento ideal para tus
-          objetivos. Escríbenos directamente por WhatsApp.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          {[
-            { icon: <MessageCircle size={22} className="text-[#0066FF]" />, label: "WhatsApp", value: "+57 305 309 7602" },
-            { icon: <MapPin size={22} className="text-[#0066FF]" />, label: "Ubicación", value: "Colombia 🇨🇴" },
-            { icon: <Clock size={22} className="text-[#0066FF]" />, label: "Atención", value: "Lun – Sáb, 8am–8pm" },
-          ].map(({ icon, label, value }) => (
-            <div
-              key={label}
-              className="flex flex-col items-center gap-2 p-5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-[#0066FF]/30 transition-all"
-            >
-              {icon}
-              <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
-              <span className="text-sm font-semibold">{value}</span>
-            </div>
-          ))}
-        </div>
-
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-3 bg-green-500 hover:bg-green-400 text-white px-8 py-4 rounded-full font-black uppercase tracking-wider transition-all hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5 active:scale-95"
-        >
-          <MessageCircle size={20} />
-          Escribir por WhatsApp
-        </a>
-      </div>
-    </section>
-  );
-};
+import StorePage      from "@/pages/StorePage";
+import Login          from "@/pages/Login";
+import Dashboard      from "@/pages/Admin/Dashboard";       // legacy CRUD (kept)
+import AdminDashboard from "@/pages/Admin/AdminDashboard";  // new full dashboard
+import Inventario     from "@/pages/Staff/Inventario";      // staff view
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function App() {
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const itemCount = useCartStore(selectItemCount);
-
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#0066FF]/30">
-      <Navbar
-        onCartClick={() => setIsCartOpen(true)}
-        cartCount={itemCount}
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: "#0A0A0F",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "12px",
+            fontSize: "13px",
+          },
+          success: { iconTheme: { primary: "#0066FF", secondary: "#fff" } },
+          error:   { iconTheme: { primary: "#EF4444", secondary: "#fff" } },
+        }}
       />
+      <Routes>
+        {/* Public */}
+        <Route path="/"      element={<StorePage />} />
+        <Route path="/login" element={<Login />} />
 
-      <main className="max-w-7xl mx-auto">
-        {/* Sección Inicio — ancla para el navbar */}
-        <div id="inicio">
-          <HeroSection />
-        </div>
+        {/* Staff — inventory management */}
+        <Route
+          path="/staff/inventario"
+          element={
+            <ProtectedRoute roles={["admin", "staff"]}>
+              <Inventario />
+            </ProtectedRoute>
+          }
+        />
 
-        <ProductCatalog />
+        {/* Admin — full metrics + user management */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-        <ContactSection />
-      </main>
+        {/* Legacy /admin → redirect to dashboard */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["admin", "staff"]}>
+              <Navigate to="/admin/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
 
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-      />
-
-      <Footer />
-    </div>
+        {/* Catch-all */}
+        <Route path="*" element={<StorePage />} />
+      </Routes>
+    </>
   );
 }
 

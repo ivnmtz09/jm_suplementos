@@ -2,40 +2,45 @@
 
 /**
  * Construye el mensaje estructurado para WhatsApp con el prefijo [PEDIDO-JM].
- * Formato optimizado para procesamiento por IA de WhatsApp Business.
+ * Formato profesional optimizado para procesamiento por IA de WhatsApp Business.
  *
  * @param {Array}  items       — items del carrito: { name, price, quantity, sku? }
  * @param {string} clientName  — nombre del cliente
  * @returns {string} mensaje listo para codificar
  */
 export function buildWhatsAppMessage(items, clientName = "Cliente") {
-  const lines = [];
+  const sep = "━━━━━━━━━━━━━━━━";
 
-  lines.push("[PEDIDO-JM]");
-  lines.push(`Cliente: ${clientName}`);
-  lines.push("Productos:");
+  const lines = [
+    `*[PEDIDO-JM]*`,
+    sep,
+    `👤 *Cliente:* ${clientName}`,
+    sep,
+  ];
 
   items.forEach((item) => {
-    const sku       = item.sku ?? item.id ?? "N/A";
-    const unitPrice = Number(item.price).toFixed(2);
-    const subtotal  = (item.price * item.quantity).toFixed(2);
-    lines.push(
-      `- ${item.quantity} x ${item.name} (${sku}) | P.U. $${unitPrice} | Subtotal: $${subtotal}`
-    );
+    const sku      = item.sku ?? item.id ?? "S/N";
+    const precio   = Number(item.price).toLocaleString("es-CO");
+    const subtotal = (item.price * item.quantity).toLocaleString("es-CO");
+    lines.push(`📦 *Producto:* ${item.name} (${sku})`);
+    lines.push(`💵 *Precio:* $${precio} x ${item.quantity} uds = $${subtotal}`);
+    if (items.indexOf(item) < items.length - 1) lines.push(""); // spacer between items
   });
 
   const total = items
     .reduce((sum, item) => sum + item.price * item.quantity, 0)
-    .toFixed(2);
+    .toLocaleString("es-CO");
 
-  lines.push(`Total a Pagar: $${total}`);
+  lines.push(sep);
+  lines.push(`💰 *TOTAL A PAGAR:* $${total} COP`);
+  lines.push("");
+  lines.push("_Pedido generado desde jmsuplementos.com_");
 
   return lines.join("\n");
 }
 
 /**
  * Genera la URL wa.me con el mensaje codificado.
- * El número se toma de la variable de entorno VITE_WHATSAPP_NUMBER.
  *
  * @param {Array}  items       — items del carrito
  * @param {string} clientName  — nombre del cliente
