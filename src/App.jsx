@@ -8,7 +8,16 @@ import Login          from "@/pages/Login";
 import Dashboard      from "@/pages/Admin/Dashboard";       // legacy CRUD (kept)
 import AdminDashboard from "@/pages/Admin/AdminDashboard";  // new full dashboard
 import Inventario     from "@/pages/Staff/Inventario";      // staff view
+import DashboardLayout  from "@/layouts/DashboardLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import useAuthStore from "@/store/authStore";
+
+const RoleBasedRedirect = () => {
+  const { role } = useAuthStore();
+  if (role === "admin") return <Navigate to="/admin/dashboard" replace />;
+  if (role === "staff") return <Navigate to="/staff/inventario" replace />;
+  return <Navigate to="/" replace />;
+};
 
 function App() {
   return (
@@ -37,27 +46,31 @@ function App() {
           path="/staff/inventario"
           element={
             <ProtectedRoute roles={["admin", "staff"]}>
-              <Inventario />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Inventario />} />
+        </Route>
 
         {/* Admin — full metrics + user management */}
         <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute roles={["admin"]}>
-              <AdminDashboard />
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+        </Route>
 
-        {/* Legacy /admin → redirect to dashboard */}
+        {/* Legacy /admin → check role and redirect properly */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute roles={["admin", "staff"]}>
-              <Navigate to="/admin/dashboard" replace />
+              <RoleBasedRedirect />
             </ProtectedRoute>
           }
         />

@@ -25,8 +25,10 @@ const Login = () => {
     try {
       const role = await login(email, password);
       toast.success("¡Bienvenido de vuelta! 💪");
-      if (role === "admin" || role === "staff") {
-        navigate("/admin");
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "staff") {
+        navigate("/staff/inventario");
       } else {
         navigate("/");
       }

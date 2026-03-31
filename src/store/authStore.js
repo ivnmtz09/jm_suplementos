@@ -5,7 +5,7 @@ import {
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/store/firebase";
 
 const useAuthStore = create((set) => ({
@@ -22,6 +22,14 @@ const useAuthStore = create((set) => ({
     try {
       const snap = await getDoc(doc(db, "usuarios", uid));
       role = snap.exists() ? snap.data().rol : null;
+      console.log(`Login Exitoso - UID: ${uid} - Rol asignado: ${role}`);
+      
+      // Actualizamos ultimoAcceso
+      if (snap.exists()) {
+        await updateDoc(doc(db, "usuarios", uid), {
+          ultimoAcceso: serverTimestamp()
+        });
+      }
     } catch (error) {
       console.error("Error fetching user role on login:", error);
     }
@@ -49,8 +57,7 @@ const useAuthStore = create((set) => ({
           role = snap.exists() ? snap.data().rol : null;
           
           // Debugging solicitado
-          console.log("UID Actual:", firebaseUser.uid);
-          console.log("Rol Detectado:", role);
+          console.log(`Login Exitoso - UID: ${firebaseUser.uid} - Rol asignado: ${role}`);
 
         } catch (error) {
           console.error("Error fetching user role in checkAuth:", error);
